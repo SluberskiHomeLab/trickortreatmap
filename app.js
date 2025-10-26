@@ -17,6 +17,14 @@ const GOOGLE_MAPS_CONFIG = {
     zoom: 16
 };
 
+// Coordinate conversion constants
+// These values control how grid coordinates (0-100%) map to lat/lng offsets
+const COORD_CONVERSION = {
+    LAT_SCALE: 1000,  // Divider for latitude offset calculation
+    LNG_SCALE: 1000,  // Divider for longitude offset calculation
+    CENTER_OFFSET: 50 // Percentage representing center of grid (50%)
+};
+
 let markers = [];
 let addingMarkerMode = false;
 let zoomLevel = 1;
@@ -77,10 +85,24 @@ function syncMarkersFromFirebase(data) {
     // Add markers from Firebase
     if (data) {
         Object.values(data).forEach(markerData => {
-            if (isGoogleMapView) {
+            // Determine marker type based on available coordinates
+            const hasLatLng = markerData.lat !== undefined && markerData.lng !== undefined;
+            const hasXY = markerData.x !== undefined && markerData.y !== undefined;
+            
+            if (isGoogleMapView && hasLatLng) {
                 addGoogleMarker(markerData.lat, markerData.lng, markerData.id, false);
-            } else {
+            } else if (isGoogleMapView && hasXY) {
+                // Convert grid coordinates to lat/lng for Google Maps
+                const lat = GOOGLE_MAPS_CONFIG.center.lat + ((markerData.y - COORD_CONVERSION.CENTER_OFFSET) / COORD_CONVERSION.LAT_SCALE);
+                const lng = GOOGLE_MAPS_CONFIG.center.lng + ((markerData.x - COORD_CONVERSION.CENTER_OFFSET) / COORD_CONVERSION.LNG_SCALE);
+                addGoogleMarker(lat, lng, markerData.id, false);
+            } else if (!isGoogleMapView && hasXY) {
                 addMarker(markerData.x, markerData.y, false, markerData.id);
+            } else if (!isGoogleMapView && hasLatLng) {
+                // Convert lat/lng to grid coordinates
+                const x = COORD_CONVERSION.CENTER_OFFSET + ((markerData.lng - GOOGLE_MAPS_CONFIG.center.lng) * COORD_CONVERSION.LNG_SCALE);
+                const y = COORD_CONVERSION.CENTER_OFFSET + ((markerData.lat - GOOGLE_MAPS_CONFIG.center.lat) * COORD_CONVERSION.LAT_SCALE);
+                addMarker(x, y, false, markerData.id);
             }
         });
     }
@@ -265,9 +287,9 @@ function transferMarkersToGoogleMap() {
     googleMarkers = [];
     
     markers.forEach(m => {
-        // Convert percentage to lat/lng (rough approximation)
-        const lat = GOOGLE_MAPS_CONFIG.center.lat + ((m.y - 50) / 1000);
-        const lng = GOOGLE_MAPS_CONFIG.center.lng + ((m.x - 50) / 1000);
+        // Convert percentage to lat/lng using conversion constants
+        const lat = GOOGLE_MAPS_CONFIG.center.lat + ((m.y - COORD_CONVERSION.CENTER_OFFSET) / COORD_CONVERSION.LAT_SCALE);
+        const lng = GOOGLE_MAPS_CONFIG.center.lng + ((m.x - COORD_CONVERSION.CENTER_OFFSET) / COORD_CONVERSION.LNG_SCALE);
         addGoogleMarker(lat, lng, m.id, false);
     });
 }
@@ -277,9 +299,9 @@ function transferMarkersToGrid() {
     markers = [];
     
     googleMarkers.forEach(m => {
-        // Convert lat/lng back to percentage (rough approximation)
-        const x = 50 + ((m.lng - GOOGLE_MAPS_CONFIG.center.lng) * 1000);
-        const y = 50 + ((m.lat - GOOGLE_MAPS_CONFIG.center.lat) * 1000);
+        // Convert lat/lng back to percentage using conversion constants
+        const x = COORD_CONVERSION.CENTER_OFFSET + ((m.lng - GOOGLE_MAPS_CONFIG.center.lng) * COORD_CONVERSION.LNG_SCALE);
+        const y = COORD_CONVERSION.CENTER_OFFSET + ((m.lat - GOOGLE_MAPS_CONFIG.center.lat) * COORD_CONVERSION.LAT_SCALE);
         addMarker(x, y, false, m.id);
     });
 }
