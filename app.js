@@ -1,13 +1,14 @@
 // Simple interactive map for trick-or-treat locations
-// Firebase Configuration - Replace with your Firebase project credentials
+// Firebase Configuration - This will be replaced by GitHub Actions during deployment
+// DO NOT put real Firebase credentials here - use GitHub repository secrets instead
 const FIREBASE_CONFIG = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "PLACEHOLDER_FIREBASE_API_KEY",
+    authDomain: "PLACEHOLDER_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://PLACEHOLDER_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "PLACEHOLDER_PROJECT_ID",
+    storageBucket: "PLACEHOLDER_PROJECT_ID.appspot.com",
+    messagingSenderId: "PLACEHOLDER_SENDER_ID",
+    appId: "PLACEHOLDER_APP_ID"
 };
 
 // Google Maps Configuration
@@ -42,8 +43,8 @@ let useFirebase = false;
 // Initialize Firebase
 function initFirebase() {
     try {
-        // Check if Firebase config is set
-        if (FIREBASE_CONFIG.apiKey === "YOUR_FIREBASE_API_KEY") {
+        // Check if Firebase config is set (placeholder values indicate config not replaced)
+        if (FIREBASE_CONFIG.apiKey === "PLACEHOLDER_FIREBASE_API_KEY" || FIREBASE_CONFIG.apiKey === "YOUR_FIREBASE_API_KEY") {
             console.warn("Firebase not configured. Using localStorage fallback.");
             showConfigNotice();
             return false;
