@@ -206,4 +206,3 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
     document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
 });
-
