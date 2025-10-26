@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cartwright Ranch - Trick or Treat Map</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <div id="header">
@@ -15,6 +18,7 @@
     <div id="controls">
         <button id="addMarkerBtn" class="btn btn-primary">📍 Mark My House</button>
         <button id="clearAllBtn" class="btn btn-secondary">🗑️ Clear All Markers</button>
+        <button id="toggleMapBtn" class="btn btn-toggle">🗺️ Toggle Map View</button>
         <button id="zoomInBtn" class="btn btn-zoom">🔍 +</button>
         <button id="zoomOutBtn" class="btn btn-zoom">🔍 -</button>
         <div class="legend">
@@ -25,6 +29,9 @@
     <div id="mapContainer">
         <div id="map">
             <!-- Map grid will be rendered here -->
+        </div>
+        <div id="googleMap" style="display:none;">
+            <!-- Google Maps will be rendered here -->
         </div>
     </div>
     
@@ -37,9 +44,17 @@
             <li>Click on any existing marker to remove it</li>
             <li>Use zoom buttons to adjust the view</li>
         </ol>
-        <p class="note"><strong>Note:</strong> This map uses a simple grid system. Markers are stored in your browser.</p>
+        <p class="note"><strong>Note:</strong> Markers are now shared across all users in real-time!</p>
+    </div>
+    
+    <div id="config-notice" style="display:none;">
+        <div style="background: #fff3cd; color: #856404; padding: 15px; margin: 20px; border-radius: 8px; text-align: center;">
+            <strong>⚠️ Configuration Required</strong>
+            <p>Please add your Firebase and Google Maps API keys to app.js to enable shared markers and map view.</p>
+        </div>
     </div>
     
     <script src="app.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initGoogleMap"></script>
 </body>
 </html>

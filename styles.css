@@ -88,6 +88,16 @@ body {
     background: #868e96;
 }
 
+.btn-toggle {
+    background: #28a745;
+    color: white;
+}
+
+.btn-toggle:hover {
+    background: #48b765;
+    transform: scale(1.05);
+}
+
 .legend {
     display: flex;
     gap: 15px;
@@ -125,6 +135,14 @@ body {
 
 #map.adding-marker {
     cursor: crosshair;
+}
+
+#googleMap {
+    width: 800px;
+    height: 600px;
+    border: 3px solid #ff6600;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 .marker {
@@ -203,7 +221,7 @@ body {
         flex-direction: column;
     }
     
-    #map {
+    #map, #googleMap {
         width: 95vw;
         height: 500px;
     }
