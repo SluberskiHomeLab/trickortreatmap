@@ -17,7 +17,7 @@
     
     <div id="controls">
         <button id="addMarkerBtn" class="btn btn-primary">📍 Mark My House</button>
-        <button id="toggleMapBtn" class="btn btn-toggle">🗺️ Toggle Map View</button>
+        <button id="toggleMapBtn" class="btn btn-toggle">🗺️ Google Maps</button>
         <button id="zoomInBtn" class="btn btn-zoom">🔍 +</button>
         <button id="zoomOutBtn" class="btn btn-zoom">🔍 -</button>
         <div class="legend">
@@ -27,7 +27,8 @@
     
     <div id="mapContainer">
         <div id="map">
-            <!-- Map grid will be rendered here -->
+            <!-- Neighborhood image will be displayed here -->
+            <img id="neighborhoodImage" src="neighborhood-map.jpg" alt="Neighborhood Map" />
         </div>
         <div id="googleMap" style="display:none;">
             <!-- Google Maps will be rendered here -->
@@ -37,13 +38,25 @@
     <div id="instructions">
         <h3>How to use:</h3>
         <ol>
-            <li>Click the "Mark My House" button to enable marking mode</li>
-            <li>Click on your house location on the map grid</li>
-            <li>Your house will be marked with a 🎃 icon</li>
+            <li>Click the "📍 Mark My House" button to enable marking mode</li>
+            <li>Click on your house location on the neighborhood map</li>
+            <li>Your house will be marked with a 🎃 pumpkin icon</li>
             <li>Click on any existing marker to remove it</li>
             <li>Use zoom buttons to adjust the view</li>
         </ol>
-        <p class="note"><strong>Note:</strong> Markers are now shared across all users in real-time!</p>
+        <p class="note"><strong>Note:</strong> Markers are shared across all users in real-time!</p>
+        
+        <div style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+            <h4 style="color: #ffa500; margin-bottom: 10px;">🗺️ Using Your Own Neighborhood Map:</h4>
+            <p>For the best experience, add your own neighborhood image:</p>
+            <ol>
+                <li>Take a screenshot of your neighborhood from Google Maps, Apple Maps, or satellite imagery</li>
+                <li>Save the image as <strong>"neighborhood-map.jpg"</strong></li>
+                <li>Place it in the same folder as this HTML file</li>
+                <li>Refresh the page to see your custom map!</li>
+            </ol>
+            <p><em>Supported formats: .jpg, .jpeg, .png, .gif</em></p>
+        </div>
     </div>
     
     <div id="config-notice" style="display:none;">

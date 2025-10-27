@@ -120,21 +120,26 @@ body {
 #map {
     width: 800px;
     height: 600px;
-    background: linear-gradient(45deg, #2a5a3a 25%, transparent 25%, transparent 75%, #2a5a3a 75%, #2a5a3a),
-                linear-gradient(45deg, #2a5a3a 25%, transparent 25%, transparent 75%, #2a5a3a 75%, #2a5a3a);
-    background-size: 40px 40px;
-    background-position: 0 0, 20px 20px;
-    background-color: #3a6d4a;
     border: 3px solid #ff6600;
     border-radius: 10px;
     position: relative;
     overflow: hidden;
     cursor: default;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    background-color: #f0f0f0; /* Fallback color if image doesn't load */
 }
 
 #map.adding-marker {
     cursor: crosshair;
+}
+
+#neighborhoodImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Maintains aspect ratio while filling the container */
+    display: block;
+    user-select: none; /* Prevents image selection */
+    pointer-events: none; /* Allows clicks to pass through to the map container */
 }
 
 #googleMap {

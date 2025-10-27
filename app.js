@@ -116,8 +116,8 @@ function initMap() {
     // Initialize Firebase
     useFirebase = initFirebase();
     
-    // Add street grid lines for visual interest
-    createStreetGrid();
+    // Setup neighborhood image
+    setupNeighborhoodImage();
     
     // Load saved markers
     if (!useFirebase) {
@@ -187,25 +187,60 @@ function toggleMapView() {
     }
 }
 
-// Create decorative street grid
-function createStreetGrid() {
+// Setup neighborhood image
+function setupNeighborhoodImage() {
+    const imageElement = document.getElementById('neighborhoodImage');
+    
+    // Handle image load error - provide fallback
+    imageElement.addEventListener('error', () => {
+        console.warn('Neighborhood image not found. Creating placeholder.');
+        createImagePlaceholder();
+    });
+    
+    // Handle successful image load
+    imageElement.addEventListener('load', () => {
+        console.log('Neighborhood image loaded successfully');
+    });
+}
+
+// Create a placeholder when no neighborhood image is available
+function createImagePlaceholder() {
     const mapElement = document.getElementById('map');
+    const imageElement = document.getElementById('neighborhoodImage');
     
-    // Add horizontal streets
-    for (let i = 1; i < 5; i++) {
-        const street = document.createElement('div');
-        street.className = 'street-line-h';
-        street.style.top = (i * 20) + '%';
-        mapElement.appendChild(street);
-    }
+    // Hide the broken image
+    imageElement.style.display = 'none';
     
-    // Add vertical streets
-    for (let i = 1; i < 5; i++) {
-        const street = document.createElement('div');
-        street.className = 'street-line-v';
-        street.style.left = (i * 20) + '%';
-        mapElement.appendChild(street);
-    }
+    // Create a placeholder with instructions
+    const placeholder = document.createElement('div');
+    placeholder.id = 'imagePlaceholder';
+    placeholder.innerHTML = `
+        <div style="
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+            color: #155724;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        ">
+            <h3 style="margin-bottom: 15px; color: #ff6600;">📍 Add Your Neighborhood Map</h3>
+            <p style="margin-bottom: 10px;">To use a custom neighborhood image:</p>
+            <ol style="text-align: left; margin-bottom: 15px;">
+                <li>Take a screenshot of your neighborhood from Google Maps</li>
+                <li>Save it as "neighborhood-map.jpg"</li>
+                <li>Place it in the same folder as this HTML file</li>
+                <li>Refresh the page</li>
+            </ol>
+            <p style="font-weight: bold; color: #ff6600;">Click anywhere to place your 🎃 pumpkin marker!</p>
+        </div>
+    `;
+    
+    mapElement.appendChild(placeholder);
 }
 
 // Handle map clicks
@@ -471,7 +506,6 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleAddMarkerMode(!addingMarkerMode);
     });
     
-    document.getElementById('clearAllBtn').addEventListener('click', clearAllMarkers);
     document.getElementById('toggleMapBtn').addEventListener('click', toggleMapView);
     document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
     document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);

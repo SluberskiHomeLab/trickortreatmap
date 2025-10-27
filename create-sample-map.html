@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Sample Neighborhood Map</title>
+</head>
+<body>
+    <canvas id="mapCanvas" width="800" height="600" style="border: 1px solid #ccc;"></canvas>
+    <br><br>
+    <button onclick="downloadImage()">Download Sample Map</button>
+    
+    <script>
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create a sample neighborhood map
+        function createSampleMap() {
+            // Background - green area
+            ctx.fillStyle = '#90EE90';
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // Streets - gray roads
+            ctx.fillStyle = '#808080';
+            
+            // Horizontal streets
+            ctx.fillRect(0, 150, 800, 40); // Main Street
+            ctx.fillRect(0, 300, 800, 40); // Oak Street  
+            ctx.fillRect(0, 450, 800, 40); // Pine Street
+            
+            // Vertical streets
+            ctx.fillRect(200, 0, 40, 600); // 1st Avenue
+            ctx.fillRect(400, 0, 40, 600); // 2nd Avenue
+            ctx.fillRect(600, 0, 40, 600); // 3rd Avenue
+            
+            // House blocks - lighter green
+            ctx.fillStyle = '#98FB98';
+            
+            // Top row houses
+            drawHouseBlock(50, 50, 120, 80);
+            drawHouseBlock(270, 50, 120, 80);
+            drawHouseBlock(470, 50, 120, 80);
+            drawHouseBlock(670, 50, 120, 80);
+            
+            // Second row houses
+            drawHouseBlock(50, 210, 120, 80);
+            drawHouseBlock(270, 210, 120, 80);
+            drawHouseBlock(470, 210, 120, 80);
+            drawHouseBlock(670, 210, 120, 80);
+            
+            // Third row houses
+            drawHouseBlock(50, 360, 120, 80);
+            drawHouseBlock(270, 360, 120, 80);
+            drawHouseBlock(470, 360, 120, 80);
+            drawHouseBlock(670, 360, 120, 80);
+            
+            // Bottom row houses
+            drawHouseBlock(50, 510, 120, 80);
+            drawHouseBlock(270, 510, 120, 80);
+            drawHouseBlock(470, 510, 120, 80);
+            drawHouseBlock(670, 510, 120, 80);
+            
+            // Add street labels
+            ctx.fillStyle = '#000';
+            ctx.font = '16px Arial';
+            ctx.fillText('Main Street', 10, 175);
+            ctx.fillText('Oak Street', 10, 325);
+            ctx.fillText('Pine Street', 10, 475);
+            
+            // Add title
+            ctx.font = '24px Arial';
+            ctx.fillStyle = '#8B4513';
+            ctx.fillText('Cartwright Ranch Neighborhood', 250, 30);
+        }
+        
+        function drawHouseBlock(x, y, width, height) {
+            // House block background
+            ctx.fillStyle = '#98FB98';
+            ctx.fillRect(x, y, width, height);
+            
+            // House outline
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + 10, y + 10, width - 20, height - 20);
+            
+            // Roof
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.moveTo(x + 10, y + 10);
+            ctx.lineTo(x + width/2, y - 5);
+            ctx.lineTo(x + width - 10, y + 10);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'neighborhood-map.jpg';
+            link.href = canvas.toDataURL('image/jpeg');
+            link.click();
+        }
+        
+        // Create the map when page loads
+        createSampleMap();
+    </script>
+</body>
+</html>
