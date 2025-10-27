@@ -3,12 +3,20 @@
 
 // Get configuration from runtime config (GitHub Actions) or fallback to placeholders
 function getFirebaseConfig() {
-    if (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.firebase && window.RUNTIME_CONFIG.firebase.apiKey !== '') {
+    console.log('🔍 Checking runtime configuration...');
+    console.log('window.RUNTIME_CONFIG exists:', !!window.RUNTIME_CONFIG);
+    
+    if (window.RUNTIME_CONFIG) {
+        console.log('RUNTIME_CONFIG contents:', window.RUNTIME_CONFIG);
+    }
+    
+    if (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.firebase && window.RUNTIME_CONFIG.firebase.apiKey && window.RUNTIME_CONFIG.firebase.apiKey !== '') {
         console.log('🔧 Using runtime Firebase configuration');
+        console.log('Firebase API key starts with:', window.RUNTIME_CONFIG.firebase.apiKey.substring(0, 10) + '...');
         return window.RUNTIME_CONFIG.firebase;
     }
     
-    console.log('⚠️ Using placeholder Firebase configuration');
+    console.log('⚠️ Using placeholder Firebase configuration (localStorage fallback)');
     return {
         apiKey: "PLACEHOLDER_FIREBASE_API_KEY",
         authDomain: "PLACEHOLDER_PROJECT_ID.firebaseapp.com",
@@ -23,6 +31,7 @@ function getFirebaseConfig() {
 function getGoogleMapsApiKey() {
     if (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.googleMapsApiKey && window.RUNTIME_CONFIG.googleMapsApiKey !== '') {
         console.log('🔧 Using runtime Google Maps API key');
+        console.log('Google Maps API key starts with:', window.RUNTIME_CONFIG.googleMapsApiKey.substring(0, 10) + '...');
         return window.RUNTIME_CONFIG.googleMapsApiKey;
     }
     
