@@ -1,19 +1,38 @@
 // Simple interactive map for trick-or-treat locations
-// Firebase Configuration - This will be replaced by GitHub Actions during deployment
-// DO NOT put real Firebase credentials here - use GitHub repository secrets instead
-const FIREBASE_CONFIG = {
-    apiKey: "PLACEHOLDER_FIREBASE_API_KEY",
-    authDomain: "PLACEHOLDER_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://PLACEHOLDER_PROJECT_ID-default-rtdb.firebaseio.com",
-    projectId: "PLACEHOLDER_PROJECT_ID",
-    storageBucket: "PLACEHOLDER_PROJECT_ID.appspot.com",
-    messagingSenderId: "PLACEHOLDER_SENDER_ID",
-    appId: "PLACEHOLDER_APP_ID"
-};
+// Configuration will be loaded from runtime config or fallback to placeholders
 
-// Google Maps API Key - This will be replaced by GitHub Actions during deployment
-// DO NOT put real Google Maps API key here - use GitHub repository secrets instead
-const GOOGLE_MAPS_API_KEY = "PLACEHOLDER_GOOGLE_MAPS_API_KEY";
+// Get configuration from runtime config (GitHub Actions) or fallback to placeholders
+function getFirebaseConfig() {
+    if (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.firebase && window.RUNTIME_CONFIG.firebase.apiKey !== '') {
+        console.log('🔧 Using runtime Firebase configuration');
+        return window.RUNTIME_CONFIG.firebase;
+    }
+    
+    console.log('⚠️ Using placeholder Firebase configuration');
+    return {
+        apiKey: "PLACEHOLDER_FIREBASE_API_KEY",
+        authDomain: "PLACEHOLDER_PROJECT_ID.firebaseapp.com",
+        databaseURL: "https://PLACEHOLDER_PROJECT_ID-default-rtdb.firebaseio.com",
+        projectId: "PLACEHOLDER_PROJECT_ID",
+        storageBucket: "PLACEHOLDER_PROJECT_ID.appspot.com",
+        messagingSenderId: "PLACEHOLDER_SENDER_ID",
+        appId: "PLACEHOLDER_APP_ID"
+    };
+}
+
+function getGoogleMapsApiKey() {
+    if (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.googleMapsApiKey && window.RUNTIME_CONFIG.googleMapsApiKey !== '') {
+        console.log('🔧 Using runtime Google Maps API key');
+        return window.RUNTIME_CONFIG.googleMapsApiKey;
+    }
+    
+    console.log('⚠️ Using placeholder Google Maps API key');
+    return "PLACEHOLDER_GOOGLE_MAPS_API_KEY";
+}
+
+// Set configuration
+const FIREBASE_CONFIG = getFirebaseConfig();
+const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
 
 // Google Maps Configuration
 const GOOGLE_MAPS_CONFIG = {
