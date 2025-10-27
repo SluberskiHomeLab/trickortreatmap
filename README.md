@@ -65,7 +65,7 @@ This project is designed to be deployed to GitHub Pages using GitHub Actions wit
 - `FIREBASE_APP_ID`: Your Firebase app ID
 
 **Optional Google Maps Secret:**
-- `GOOGLE_MAPS_API_KEY`: Your Google Maps API key (if using map view)
+- `GOOGLE_MAPS_API_KEY`: Your Google Maps API key (enables the Google Maps toggle feature)
 
 #### 5. Enable GitHub Pages
 1. Go to your repository → **Settings** → **Pages**
@@ -102,8 +102,10 @@ Simply use your deployed GitHub Pages URL for testing.
 ### Security Notes
 - **Never commit real API keys or Firebase config to your repository**
 - All sensitive configuration is handled through GitHub repository secrets
-- The deployed version gets the real config injected during the GitHub Actions build process
+- Firebase and Google Maps API keys are injected during the GitHub Actions build process
+- Google Maps API is loaded dynamically at runtime, keeping the key secure
 - Local development uses separate local config files that are ignored by git
+- Source code inspection will only show placeholder values, not real credentials
 
 ## Deployment Process
 

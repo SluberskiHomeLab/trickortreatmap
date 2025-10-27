@@ -11,6 +11,10 @@ const FIREBASE_CONFIG = {
     appId: "PLACEHOLDER_APP_ID"
 };
 
+// Google Maps API Key - This will be replaced by GitHub Actions during deployment
+// DO NOT put real Google Maps API key here - use GitHub repository secrets instead
+const GOOGLE_MAPS_API_KEY = "PLACEHOLDER_GOOGLE_MAPS_API_KEY";
+
 // Google Maps Configuration
 const GOOGLE_MAPS_CONFIG = {
     // Default location: Cartwright Ranch area (update with actual coordinates)
@@ -133,6 +137,43 @@ function initMap() {
 }
 
 // Initialize Google Maps
+// Load Google Maps API dynamically with secure API key
+function loadGoogleMapsAPI() {
+    return new Promise((resolve, reject) => {
+        // Check if API key is configured
+        if (GOOGLE_MAPS_API_KEY === "PLACEHOLDER_GOOGLE_MAPS_API_KEY" || !GOOGLE_MAPS_API_KEY) {
+            console.warn("Google Maps API key not configured. Google Maps features disabled.");
+            reject(new Error("Google Maps API key not configured"));
+            return;
+        }
+
+        // Check if Google Maps is already loaded
+        if (typeof google !== 'undefined' && google.maps) {
+            resolve();
+            return;
+        }
+
+        // Create and load the Google Maps script
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initGoogleMapCallback`;
+        script.async = true;
+        script.defer = true;
+        
+        // Set up callback for when Google Maps loads
+        window.initGoogleMapCallback = () => {
+            initGoogleMap();
+            resolve();
+        };
+        
+        script.onerror = () => {
+            console.error("Failed to load Google Maps API");
+            reject(new Error("Failed to load Google Maps API"));
+        };
+        
+        document.head.appendChild(script);
+    });
+}
+
 function initGoogleMap() {
     try {
         const googleMapElement = document.getElementById('googleMap');
@@ -165,8 +206,28 @@ function toggleMapView() {
     const gridMap = document.getElementById('map');
     const googleMapElement = document.getElementById('googleMap');
     
+    // If Google Maps isn't loaded yet, try to load it
     if (!googleMap) {
-        alert("Google Maps not available. Please configure API key.");
+        // Show loading message
+        const button = document.getElementById('toggleMapBtn');
+        const originalText = button.textContent;
+        button.textContent = '🔄 Loading Maps...';
+        button.disabled = true;
+        
+        loadGoogleMapsAPI()
+            .then(() => {
+                // Success - now we can toggle
+                button.textContent = originalText;
+                button.disabled = false;
+                toggleMapView(); // Recursively call after loading
+            })
+            .catch((error) => {
+                // Failed to load
+                button.textContent = originalText;
+                button.disabled = false;
+                alert("Google Maps not available. Please configure API key in GitHub repository secrets.");
+                console.error("Google Maps loading failed:", error);
+            });
         return;
     }
     
@@ -511,5 +572,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
 });
 
-// Make initGoogleMap available globally for Google Maps callback
-window.initGoogleMap = initGoogleMap;
+// Global callback function is set dynamically when loading Google Maps API

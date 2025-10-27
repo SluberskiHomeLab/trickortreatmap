@@ -67,8 +67,10 @@
     </div>
     
     <script src="app.js"></script>
-    <!-- Google Maps API - Replace YOUR_GOOGLE_MAPS_API_KEY with your actual API key -->
-    <!-- To enable Google Maps, uncomment the line below after adding your API key -->
-    <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initGoogleMap"></script> -->
+    <!-- Google Maps API - Will be dynamically loaded by JavaScript with secure API key -->
+    <script>
+        // Google Maps API will be loaded dynamically by app.js if API key is configured
+        // This keeps the API key secure and out of the HTML source
+    </script>
 </body>
 </html>
