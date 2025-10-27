@@ -156,6 +156,21 @@ sed -i 's/PLACEHOLDER_FIREBASE_API_KEY/your-actual-api-key/g' app.js
 - Check Actions tab for detailed error logs
 - Ensure GitHub Pages is enabled in repository settings
 
+**Markers not saving on GitHub Pages:**
+- Without Firebase secrets: App uses localStorage (markers only visible to individual users)
+- Check browser console (F12) for error messages
+- Look for the deployment status panel in bottom-right corner of the page
+
+**Google Maps not working:**
+- Ensure `GOOGLE_MAPS_API_KEY` repository secret is set
+- Check that your Google Maps API key has proper permissions
+- Verify Maps JavaScript API is enabled in Google Cloud Console
+
+**Image not showing:**
+- Add `neighborhood-map.jpg` file to your repository root
+- Supported formats: .jpg, .jpeg, .png, .gif
+- If no image, app will show a helpful placeholder with instructions
+
 **Local development issues:**
 - Make sure `config.local.js` has your real Firebase config
 - Check that `config.local.js` is in `.gitignore`

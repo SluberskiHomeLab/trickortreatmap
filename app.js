@@ -115,18 +115,28 @@ function syncMarkersFromFirebase(data) {
 
 // Initialize the map
 function initMap() {
+    console.log('🎃 Initializing Trick or Treat Map...');
     const mapElement = document.getElementById('map');
+    
+    if (!mapElement) {
+        console.error('❌ Map element not found!');
+        return;
+    }
     
     // Initialize Firebase
     useFirebase = initFirebase();
+    console.log('🔥 Firebase enabled:', useFirebase);
     
     // Setup neighborhood image
     setupNeighborhoodImage();
     
     // Load saved markers
     if (!useFirebase) {
+        console.log('💾 Loading markers from localStorage...');
         loadMarkers();
     }
+    
+    console.log('✅ Map initialization complete');
     
     // Add event listeners
     mapElement.addEventListener('click', onMapClick);
@@ -252,16 +262,24 @@ function toggleMapView() {
 function setupNeighborhoodImage() {
     const imageElement = document.getElementById('neighborhoodImage');
     
+    if (!imageElement) {
+        console.error('❌ Neighborhood image element not found');
+        return;
+    }
+    
     // Handle image load error - provide fallback
     imageElement.addEventListener('error', () => {
-        console.warn('Neighborhood image not found. Creating placeholder.');
+        console.warn('🖼️ Neighborhood image not found. Creating placeholder.');
         createImagePlaceholder();
     });
     
     // Handle successful image load
     imageElement.addEventListener('load', () => {
-        console.log('Neighborhood image loaded successfully');
+        console.log('✅ Neighborhood image loaded successfully');
     });
+    
+    // Test if image exists by trying to load it
+    console.log('🖼️ Attempting to load neighborhood image:', imageElement.src);
 }
 
 // Create a placeholder when no neighborhood image is available
@@ -306,7 +324,12 @@ function createImagePlaceholder() {
 
 // Handle map clicks
 function onMapClick(e) {
-    if (!addingMarkerMode) return;
+    console.log('🖱️ Map clicked, adding marker mode:', addingMarkerMode);
+    
+    if (!addingMarkerMode) {
+        console.log('ℹ️ Not in adding marker mode, ignoring click');
+        return;
+    }
     
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -316,6 +339,8 @@ function onMapClick(e) {
     const xPercent = (x / rect.width) * 100;
     const yPercent = (y / rect.height) * 100;
     
+    console.log('📍 Placing marker at:', Math.round(xPercent) + '%,', Math.round(yPercent) + '%');
+    
     addMarker(xPercent, yPercent);
     toggleAddMarkerMode(false);
 }
@@ -323,6 +348,12 @@ function onMapClick(e) {
 // Add a marker to the map
 function addMarker(xPercent, yPercent, save = true, id = null) {
     const mapElement = document.getElementById('map');
+    
+    if (!mapElement) {
+        console.error('❌ Cannot add marker: map element not found');
+        return;
+    }
+    
     const marker = document.createElement('div');
     marker.className = 'marker';
     marker.textContent = '🎃';
@@ -342,6 +373,8 @@ function addMarker(xPercent, yPercent, save = true, id = null) {
     
     mapElement.appendChild(marker);
     markers.push({ x: xPercent, y: yPercent, element: marker, id: markerId });
+    
+    console.log('🎃 Added marker at', Math.round(xPercent) + '%,', Math.round(yPercent) + '%');
     
     if (save) {
         saveMarkers(markerId, xPercent, yPercent);
@@ -474,8 +507,13 @@ function saveMarkers(markerId, xPercent, yPercent, lat, lng) {
 }
 
 function saveMarkersLocal() {
-    const markerData = markers.map(m => ({ x: m.x, y: m.y, id: m.id }));
-    localStorage.setItem('trickortreatMarkers', JSON.stringify(markerData));
+    try {
+        const markerData = markers.map(m => ({ x: m.x, y: m.y, id: m.id }));
+        localStorage.setItem('trickortreatMarkers', JSON.stringify(markerData));
+        console.log('💾 Saved', markerData.length, 'markers to localStorage');
+    } catch (error) {
+        console.error('❌ Failed to save markers to localStorage:', error);
+    }
 }
 
 // Load markers from localStorage
@@ -484,10 +522,13 @@ function loadMarkers() {
     if (saved) {
         try {
             const markerData = JSON.parse(saved);
+            console.log('📍 Loading', markerData.length, 'markers from localStorage');
             markerData.forEach(m => addMarker(m.x, m.y, false, m.id || Date.now().toString()));
         } catch (e) {
-            console.error('Error loading markers:', e);
+            console.error('❌ Error loading markers:', e);
         }
+    } else {
+        console.log('ℹ️ No saved markers found in localStorage');
     }
 }
 
