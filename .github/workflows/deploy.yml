@@ -31,79 +31,55 @@ jobs:
 
       - name: Debug - Show secrets status
         run: |
-          echo "🔍 Checking which secrets are available..."
-          echo "FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY != '' && '✅ Set' || '❌ Not set' }}"
-          echo "FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID != '' && '✅ Set' || '❌ Not set' }}"
-          echo "GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY != '' && '✅ Set' || '❌ Not set' }}"
-          echo ""
-          echo "📄 Original app.js Firebase config:"
-          grep -A 7 "const FIREBASE_CONFIG" app.js
+          echo "🔍 Debugging secret configuration..."
+          echo "FIREBASE_API_KEY present: ${{ secrets.FIREBASE_API_KEY != '' }}"
+          echo "FIREBASE_PROJECT_ID present: ${{ secrets.FIREBASE_PROJECT_ID != '' }}"
+          echo "GOOGLE_MAPS_API_KEY present: ${{ secrets.GOOGLE_MAPS_API_KEY != '' }}"
 
       - name: Create Runtime Configuration
         run: |
-          # Check if we have the required Firebase secrets
-          if [ -n "${{ secrets.FIREBASE_API_KEY }}" ] && [ -n "${{ secrets.FIREBASE_PROJECT_ID }}" ]; then
-            echo "✅ Firebase secrets detected, creating runtime config with Firebase"
-            
-            # Create configuration with Firebase
-            cat > config.js << 'CONFIGEOF'
-          // Runtime configuration injected by GitHub Actions
-          window.RUNTIME_CONFIG = {
-            firebase: {
-              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-              databaseURL: "${{ secrets.FIREBASE_DATABASE_URL }}",
-              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-              appId: "${{ secrets.FIREBASE_APP_ID }}"
-            },
-            googleMapsApiKey: "${{ secrets.GOOGLE_MAPS_API_KEY }}",
-            isConfigured: true
-          };
+          echo "🔧 Creating runtime configuration file..."
           
-          console.log('🔧 Runtime configuration loaded from GitHub Actions');
-          if (window.RUNTIME_CONFIG.firebase.apiKey && window.RUNTIME_CONFIG.firebase.apiKey !== '') {
-            console.log('✅ Firebase configured via runtime config');
-          }
-          if (window.RUNTIME_CONFIG.googleMapsApiKey && window.RUNTIME_CONFIG.googleMapsApiKey !== '') {
-            console.log('✅ Google Maps configured via runtime config');
-          }
-          CONFIGEOF
-          else
-            echo "⚠️ Firebase secrets not found, creating fallback config"
-            
-            # Create fallback configuration
-            cat > config.js << 'CONFIGEOF'
-          // Fallback configuration - Firebase secrets not configured
-          window.RUNTIME_CONFIG = {
-            firebase: {
-              apiKey: "",
-              authDomain: "",
-              databaseURL: "",
-              projectId: "",
-              storageBucket: "",
-              messagingSenderId: "",
-              appId: ""
-            },
-            googleMapsApiKey: "${{ secrets.GOOGLE_MAPS_API_KEY }}",
-            isConfigured: false
-          };
+          # Create config.js using printf to avoid heredoc issues
+          printf '%s\n' \
+            "// Runtime configuration injected by GitHub Actions" \
+            "window.RUNTIME_CONFIG = {" \
+            "  firebase: {" \
+            "    apiKey: \"${{ secrets.FIREBASE_API_KEY }}\"," \
+            "    authDomain: \"${{ secrets.FIREBASE_AUTH_DOMAIN }}\"," \
+            "    databaseURL: \"${{ secrets.FIREBASE_DATABASE_URL }}\"," \
+            "    projectId: \"${{ secrets.FIREBASE_PROJECT_ID }}\"," \
+            "    storageBucket: \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\"," \
+            "    messagingSenderId: \"${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}\"," \
+            "    appId: \"${{ secrets.FIREBASE_APP_ID }}\"" \
+            "  }," \
+            "  googleMapsApiKey: \"${{ secrets.GOOGLE_MAPS_API_KEY }}\"," \
+            "  isConfigured: true," \
+            "  deploymentTimestamp: \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"" \
+            "};" \
+            "" \
+            "console.log('🔧 Runtime configuration loaded from GitHub Actions');" \
+            "console.log('⏰ Deployed at:', window.RUNTIME_CONFIG.deploymentTimestamp);" \
+            "" \
+            "// Validate Firebase configuration" \
+            "if (window.RUNTIME_CONFIG.firebase.apiKey && window.RUNTIME_CONFIG.firebase.apiKey.length > 10) {" \
+            "  console.log('✅ Firebase configured via runtime config');" \
+            "} else {" \
+            "  console.log('❌ Firebase not properly configured');" \
+            "}" \
+            "" \
+            "// Validate Google Maps configuration" \
+            "if (window.RUNTIME_CONFIG.googleMapsApiKey && window.RUNTIME_CONFIG.googleMapsApiKey.length > 10) {" \
+            "  console.log('✅ Google Maps configured via runtime config');" \
+            "} else {" \
+            "  console.log('❌ Google Maps not configured');" \
+            "}" > config.js
           
-          console.log('⚠️ Using fallback configuration - Firebase not configured');
-          CONFIGEOF
-          fi
-          
-          echo "📄 Created config.js with content:"
-          cat config.js
-
-      - name: Debug - Show final configuration
-        run: |
-          echo "🔍 Final runtime configuration:"
-          cat config.js
+          echo "✅ Runtime configuration created"
+          echo "📊 File size: $(wc -c < config.js) bytes"
           echo ""
-          echo "📄 Verifying files exist:"
-          ls -la *.js *.html *.css
+          echo "📄 First 15 lines of config.js:"
+          head -15 config.js
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
