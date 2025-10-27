@@ -29,39 +29,53 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+      - name: Debug - Show secrets status
+        run: |
+          echo "🔍 Checking which secrets are available..."
+          echo "FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY != '' && '✅ Set' || '❌ Not set' }}"
+          echo "FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID != '' && '✅ Set' || '❌ Not set' }}"
+          echo "GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY != '' && '✅ Set' || '❌ Not set' }}"
+          echo ""
+          echo "📄 Original app.js Firebase config:"
+          grep -A 7 "const FIREBASE_CONFIG" app.js
+
       - name: Replace Firebase Configuration
         run: |
-          # Create the Firebase config from secrets
-          cat > firebase-config.js << 'EOF'
-          const FIREBASE_CONFIG = {
-              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-              databaseURL: "${{ secrets.FIREBASE_DATABASE_URL }}",
-              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-              appId: "${{ secrets.FIREBASE_APP_ID }}"
-          };
-          EOF
+          # Replace Firebase configuration with actual secrets
+          sed -i 's/PLACEHOLDER_FIREBASE_API_KEY/${{ secrets.FIREBASE_API_KEY }}/g' app.js
+          sed -i 's/PLACEHOLDER_PROJECT_ID/${{ secrets.FIREBASE_PROJECT_ID }}/g' app.js
+          sed -i 's/PLACEHOLDER_SENDER_ID/${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}/g' app.js
+          sed -i 's/PLACEHOLDER_APP_ID/${{ secrets.FIREBASE_APP_ID }}/g' app.js
           
-          # Replace the Firebase config in app.js
-          sed -i '/^const FIREBASE_CONFIG = {/,/^};/c\
-          const FIREBASE_CONFIG = {\
-              apiKey: "${{ secrets.FIREBASE_API_KEY }}",\
-              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",\
-              databaseURL: "${{ secrets.FIREBASE_DATABASE_URL }}",\
-              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",\
-              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",\
-              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",\
-              appId: "${{ secrets.FIREBASE_APP_ID }}"\
-          };' app.js
+          # Replace the specific domain and database URL patterns
+          sed -i 's|https://PLACEHOLDER_PROJECT_ID-default-rtdb.firebaseio.com|${{ secrets.FIREBASE_DATABASE_URL }}|g' app.js
+          
+          # Verify replacements were made
+          echo "Checking Firebase config replacement..."
+          grep -A 10 "const FIREBASE_CONFIG" app.js || echo "Firebase config not found"
 
       - name: Replace Google Maps API Key
         run: |
           # Replace Google Maps API key in app.js if it exists
           if [ -n "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
             sed -i 's/PLACEHOLDER_GOOGLE_MAPS_API_KEY/${{ secrets.GOOGLE_MAPS_API_KEY }}/g' app.js
+            echo "✅ Google Maps API key replaced"
+          else
+            echo "⚠️ GOOGLE_MAPS_API_KEY secret not set - Google Maps will be disabled"
           fi
+          
+          # Verify the replacement
+          echo "Checking Google Maps API key replacement..."
+          grep -A 2 "GOOGLE_MAPS_API_KEY" app.js || echo "Google Maps API key pattern not found"
+
+      - name: Debug - Show final configuration
+        run: |
+          echo "🔍 Final app.js configuration after replacements:"
+          echo "Firebase Config:"
+          grep -A 7 "const FIREBASE_CONFIG" app.js
+          echo ""
+          echo "Google Maps API Key:"
+          grep -A 2 "GOOGLE_MAPS_API_KEY" app.js
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

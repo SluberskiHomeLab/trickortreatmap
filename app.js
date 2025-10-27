@@ -22,6 +22,10 @@ const GOOGLE_MAPS_CONFIG = {
     zoom: 16
 };
 
+// Expose configuration to window for debugging
+window.FIREBASE_CONFIG = FIREBASE_CONFIG;
+window.GOOGLE_MAPS_API_KEY = GOOGLE_MAPS_API_KEY;
+
 // Coordinate conversion constants
 // These values control how grid coordinates (0-100%) map to lat/lng offsets
 const COORD_CONVERSION = {
