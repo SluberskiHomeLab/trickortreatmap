@@ -59,87 +59,18 @@
         </div>
     </div>
     
-    <div id="config-notice" style="display:none;">
-        <div style="background: #fff3cd; color: #856404; padding: 15px; margin: 20px; border-radius: 8px; text-align: center;">
-            <strong>⚠️ Configuration Required</strong>
-            <p>Please add your Firebase and Google Maps API keys to secrets to enable shared markers and map view.</p>
-        </div>
-    </div>
+
     
-    <!-- GitHub Pages deployment status -->
-    <div id="deployment-status" style="display:none; position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; max-width: 300px;">
-        <div>🚀 <strong>GitHub Pages Status</strong></div>
-        <div id="firebase-status">🔥 Firebase: <span>Checking...</span></div>
-        <div id="maps-status">🗺️ Google Maps: <span>Checking...</span></div>
-        <div id="image-status">🖼️ Map Image: <span>Checking...</span></div>
-        <div id="storage-status">💾 Storage: <span>Checking...</span></div>
-    </div>
+
     
-    <!-- Runtime configuration (created by GitHub Actions) -->
-    <script src="config.js" onerror="console.warn('⚠️ config.js failed to load, using fallback')"></script>
+    <!-- Load configuration and application -->
+    <script src="config.js"></script>
     <script src="app.js"></script>
-    <!-- Google Maps API - Will be dynamically loaded by JavaScript with secure API key -->
+    
     <script>
-        // Google Maps API will be loaded dynamically by app.js if API key is configured
-        // This keeps the API key secure and out of the HTML source
-        
-        // Debug helper for GitHub Pages deployment
         window.addEventListener('DOMContentLoaded', () => {
             console.log('🎃 Trick or Treat Map loaded');
-            console.log('Current URL:', window.location.href);
-            
-            // Check if running on GitHub Pages
-            if (window.location.hostname.includes('github.io')) {
-                console.log('✅ Running on GitHub Pages');
-                // Show deployment status for GitHub Pages
-                document.getElementById('deployment-status').style.display = 'block';
-                updateDeploymentStatus();
-            } else {
-                console.log('ℹ️ Running locally');
-            }
         });
-        
-        function updateDeploymentStatus() {
-            // Check Firebase status
-            setTimeout(() => {
-                const firebaseStatus = document.getElementById('firebase-status').querySelector('span');
-                const isFirebaseConfigured = window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey !== 'PLACEHOLDER_FIREBASE_API_KEY';
-                firebaseStatus.textContent = isFirebaseConfigured ? '✅ Configured' : '❌ Not configured (localStorage fallback)';
-                firebaseStatus.style.color = isFirebaseConfigured ? '#28a745' : '#dc3545';
-            }, 1000);
-            
-            // Check Google Maps status
-            setTimeout(() => {
-                const mapsStatus = document.getElementById('maps-status').querySelector('span');
-                const isMapsConfigured = window.GOOGLE_MAPS_API_KEY && window.GOOGLE_MAPS_API_KEY !== 'PLACEHOLDER_GOOGLE_MAPS_API_KEY';
-                mapsStatus.textContent = isMapsConfigured ? '✅ Configured' : '❌ Not configured';
-                mapsStatus.style.color = isMapsConfigured ? '#28a745' : '#dc3545';
-            }, 1500);
-            
-            // Check image status  
-            const img = document.getElementById('neighborhoodImage');
-            const imageStatus = document.getElementById('image-status').querySelector('span');
-            img.onload = () => {
-                imageStatus.textContent = '✅ Custom image loaded';
-                imageStatus.style.color = '#28a745';
-            };
-            img.onerror = () => {
-                imageStatus.textContent = '⚠️ Using placeholder';
-                imageStatus.style.color = '#ffc107';
-            };
-            
-            // Check storage
-            const storageStatus = document.getElementById('storage-status').querySelector('span');
-            try {
-                localStorage.setItem('test', 'test');
-                localStorage.removeItem('test');
-                storageStatus.textContent = '✅ Available';
-                storageStatus.style.color = '#28a745';
-            } catch (e) {
-                storageStatus.textContent = '❌ Blocked';
-                storageStatus.style.color = '#dc3545';
-            }
-        }
     </script>
 </body>
 </html>

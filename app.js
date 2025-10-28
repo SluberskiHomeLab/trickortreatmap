@@ -1,42 +1,26 @@
 // Simple interactive map for trick-or-treat locations
-// Configuration will be loaded from runtime config or fallback to placeholders
+// Configuration loaded from config.js
 
-// Get configuration from runtime config (GitHub Actions) or fallback to placeholders
+// Get Firebase configuration
 function getFirebaseConfig() {
-    console.log('🔍 Checking runtime configuration...');
-    console.log('window.RUNTIME_CONFIG exists:', !!window.RUNTIME_CONFIG);
-    
-    if (window.RUNTIME_CONFIG) {
-        console.log('RUNTIME_CONFIG contents:', window.RUNTIME_CONFIG);
+    if (window.CONFIG && window.CONFIG.firebase && window.CONFIG.firebase.apiKey && window.CONFIG.firebase.apiKey !== '') {
+        console.log('🔧 Using Firebase configuration from config.js');
+        return window.CONFIG.firebase;
     }
     
-    if (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.firebase && window.RUNTIME_CONFIG.firebase.apiKey && window.RUNTIME_CONFIG.firebase.apiKey !== '') {
-        console.log('🔧 Using runtime Firebase configuration');
-        console.log('Firebase API key starts with:', window.RUNTIME_CONFIG.firebase.apiKey.substring(0, 10) + '...');
-        return window.RUNTIME_CONFIG.firebase;
-    }
-    
-    console.log('⚠️ Using placeholder Firebase configuration (localStorage fallback)');
-    return {
-        apiKey: "PLACEHOLDER_FIREBASE_API_KEY",
-        authDomain: "PLACEHOLDER_PROJECT_ID.firebaseapp.com",
-        databaseURL: "https://PLACEHOLDER_PROJECT_ID-default-rtdb.firebaseio.com",
-        projectId: "PLACEHOLDER_PROJECT_ID",
-        storageBucket: "PLACEHOLDER_PROJECT_ID.appspot.com",
-        messagingSenderId: "PLACEHOLDER_SENDER_ID",
-        appId: "PLACEHOLDER_APP_ID"
-    };
+    console.log('⚠️ Firebase not configured - using localStorage fallback');
+    return null;
 }
 
+// Get Google Maps API key
 function getGoogleMapsApiKey() {
-    if (window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.googleMapsApiKey && window.RUNTIME_CONFIG.googleMapsApiKey !== '') {
-        console.log('🔧 Using runtime Google Maps API key');
-        console.log('Google Maps API key starts with:', window.RUNTIME_CONFIG.googleMapsApiKey.substring(0, 10) + '...');
-        return window.RUNTIME_CONFIG.googleMapsApiKey;
+    if (window.CONFIG && window.CONFIG.googleMapsApiKey && window.CONFIG.googleMapsApiKey !== '') {
+        console.log('🔧 Using Google Maps API key from config.js');
+        return window.CONFIG.googleMapsApiKey;
     }
     
-    console.log('⚠️ Using placeholder Google Maps API key');
-    return "PLACEHOLDER_GOOGLE_MAPS_API_KEY";
+    console.log('⚠️ Google Maps API key not configured');
+    return null;
 }
 
 // Set configuration
@@ -79,10 +63,9 @@ let useFirebase = false;
 // Initialize Firebase
 function initFirebase() {
     try {
-        // Check if Firebase config is set (placeholder values indicate config not replaced)
-        if (FIREBASE_CONFIG.apiKey === "PLACEHOLDER_FIREBASE_API_KEY" || FIREBASE_CONFIG.apiKey === "YOUR_FIREBASE_API_KEY") {
-            console.warn("Firebase not configured. Using localStorage fallback.");
-            showConfigNotice();
+        // Check if Firebase config is available
+        if (!FIREBASE_CONFIG) {
+            console.log("Firebase not configured. Using localStorage fallback.");
             return false;
         }
         
@@ -95,17 +78,13 @@ function initFirebase() {
             syncMarkersFromFirebase(data);
         });
         
+        console.log('✅ Firebase initialized successfully');
         return true;
     } catch (error) {
         console.error("Firebase initialization error:", error);
-        showConfigNotice();
+        console.log("Falling back to localStorage...");
         return false;
     }
-}
-
-function showConfigNotice() {
-    const notice = document.getElementById('config-notice');
-    if (notice) notice.style.display = 'block';
 }
 
 // Sync markers from Firebase
