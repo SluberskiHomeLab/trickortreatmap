@@ -4,11 +4,12 @@
 // Get API configuration
 function getApiConfig() {
     if (window.CONFIG && window.CONFIG.api && window.CONFIG.api.baseUrl && window.CONFIG.api.baseUrl !== '') {
-        console.log('🔧 Using R2 API configuration from config.js');
+        console.log('🔧 Using local SQLite API configuration from config.js');
+        console.log('🏠 Local server:', window.CONFIG.api.baseUrl);
         return window.CONFIG.api;
     }
     
-    console.log('⚠️ API not configured - using localStorage fallback');
+    console.log('⚠️ Local API not configured - using localStorage fallback');
     return null;
 }
 
@@ -183,8 +184,10 @@ async function initApi() {
         // Load initial markers
         await loadMarkersFromApi();
         
-        // Set up periodic sync (every 30 seconds)
-        syncInterval = setInterval(loadMarkersFromApi, 30000);
+        // Set up periodic sync (faster for local server)
+        const syncTime = window.CONFIG?.storage?.syncInterval || 10000; // 10 seconds default
+        syncInterval = setInterval(loadMarkersFromApi, syncTime);
+        console.log(`⏰ Auto-sync enabled every ${syncTime/1000} seconds`);
         
         return true;
     } catch (error) {

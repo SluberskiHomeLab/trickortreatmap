@@ -1,21 +1,36 @@
-# Ignore local configuration files
-config.js
+# Local configuration files
 config.local.js
 config.local.json
 
-# Ignore IDE files
+# Node.js dependencies and files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# SQLite database files
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE files
 .vscode/
 .idea/
 
-# Ignore OS files
+# OS files
 .DS_Store
 Thumbs.db
 
-# Ignore temporary files
+# Temporary files
 *.tmp
 *.temp
 *.log
 
-# Ignore backup files
+# Backup files
 *.bak
 *~
+
+# Environment variables
+.env
+.env.local
+.env.production

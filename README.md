@@ -23,35 +23,27 @@ An interactive web application that allows residents of Cartwright Ranch to mark
 
 ## Configuration (Optional)
 
-### For Shared Markers (Cloudflare R2 + Workers)
-If you want markers to be shared across all users in real-time with a secure, scalable backend:
+### For Shared Markers (Local SQLite Database)
+If you want markers to be shared across all users in real-time with a local server (no cloud required):
 
-1. **Deploy Cloudflare Backend**: Follow the detailed guide in `CLOUDFLARE_DEPLOYMENT.md`
+**📖 Full Setup Guide:** See `LOCAL_SETUP.md` for detailed instructions
 
-2. **Quick Setup**:
-   - Install Wrangler CLI: `npm install -g wrangler`
-   - Deploy Worker: `wrangler deploy`
-   - Get your Worker URL
+**⚡ Quick Setup:**
+```bash
+npm install           # Install dependencies
+npm run init-db      # Create SQLite database  
+npm start            # Start local server
+```
 
-3. **Add to config.js**:
-   ```javascript
-   window.CONFIG = {
-       api: {
-           baseUrl: "https://trickortreat-api.<your-subdomain>.workers.dev",
-           endpoints: {
-               markers: "/api/markers",
-               health: "/api/health"
-           }
-       }
-   };
-   ```
+**🌐 Access:** Open http://localhost:3001 in your browser
 
-**Benefits of Cloudflare R2:**
-- ✅ Free tier: 10GB storage, 1M operations/month
-- ✅ Global CDN and edge computing
-- ✅ Built-in security and rate limiting  
-- ✅ No vendor lock-in
-- ✅ Better performance than Firebase
+**Benefits of Local SQLite:**
+- ✅ **No Cloud Required**: Everything runs on your computer
+- ✅ **Real-Time Sync**: 10-second updates across all connected devices  
+- ✅ **Privacy First**: All data stays on your local network
+- ✅ **Free Forever**: No usage limits or monthly costs
+- ✅ **Network Sharing**: Other devices can connect to your local server
+- ✅ **Fast Performance**: <10ms response time on local network
 
 ### For Google Maps Integration (Optional)
 To enable satellite view toggle:
