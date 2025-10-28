@@ -1,14 +1,14 @@
 // Simple interactive map for trick-or-treat locations
 // Configuration loaded from config.js
 
-// Get Firebase configuration
-function getFirebaseConfig() {
-    if (window.CONFIG && window.CONFIG.firebase && window.CONFIG.firebase.apiKey && window.CONFIG.firebase.apiKey !== '') {
-        console.log('🔧 Using Firebase configuration from config.js');
-        return window.CONFIG.firebase;
+// Get API configuration
+function getApiConfig() {
+    if (window.CONFIG && window.CONFIG.api && window.CONFIG.api.baseUrl && window.CONFIG.api.baseUrl !== '') {
+        console.log('🔧 Using R2 API configuration from config.js');
+        return window.CONFIG.api;
     }
     
-    console.log('⚠️ Firebase not configured - using localStorage fallback');
+    console.log('⚠️ API not configured - using localStorage fallback');
     return null;
 }
 
@@ -24,7 +24,7 @@ function getGoogleMapsApiKey() {
 }
 
 // Set configuration
-const FIREBASE_CONFIG = getFirebaseConfig();
+const API_CONFIG = getApiConfig();
 const GOOGLE_MAPS_API_KEY = getGoogleMapsApiKey();
 
 // Google Maps Configuration
@@ -35,7 +35,7 @@ const GOOGLE_MAPS_CONFIG = {
 };
 
 // Expose configuration to window for debugging
-window.FIREBASE_CONFIG = FIREBASE_CONFIG;
+window.API_CONFIG = API_CONFIG;
 window.GOOGLE_MAPS_API_KEY = GOOGLE_MAPS_API_KEY;
 
 // Coordinate conversion constants
@@ -54,43 +54,167 @@ let panY = 0;
 let isDragging = false;
 let startX = 0;
 let startY = 0;
-let database = null;
+let apiClient = null;
 let googleMap = null;
 let googleMarkers = [];
 let isGoogleMapView = false;
-let useFirebase = false;
+let useApi = false;
+let syncInterval = null;
 
-// Initialize Firebase
-function initFirebase() {
-    try {
-        // Check if Firebase config is available
-        if (!FIREBASE_CONFIG) {
-            console.log("Firebase not configured. Using localStorage fallback.");
+// R2 API Client
+class R2ApiClient {
+    constructor(config) {
+        this.baseUrl = config.baseUrl;
+        this.endpoints = config.endpoints;
+        this.rateLimiter = new RateLimiter(10, 60000); // 10 requests per minute
+    }
+    
+    async get(endpoint) {
+        if (!this.rateLimiter.allowRequest()) {
+            throw new Error('Rate limit exceeded');
+        }
+        
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.json();
+    }
+    
+    async post(endpoint, data) {
+        if (!this.rateLimiter.allowRequest()) {
+            throw new Error('Rate limit exceeded');
+        }
+        
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.json();
+    }
+    
+    async delete(endpoint, id) {
+        if (!this.rateLimiter.allowRequest()) {
+            throw new Error('Rate limit exceeded');
+        }
+        
+        const response = await fetch(`${this.baseUrl}${endpoint}?id=${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.json();
+    }
+    
+    async healthCheck() {
+        try {
+            const result = await this.get(this.endpoints.health);
+            return result.status === 'healthy';
+        } catch (error) {
+            console.error('Health check failed:', error);
+            return false;
+        }
+    }
+}
+
+// Simple rate limiter
+class RateLimiter {
+    constructor(maxRequests, windowMs) {
+        this.maxRequests = maxRequests;
+        this.windowMs = windowMs;
+        this.requests = [];
+    }
+    
+    allowRequest() {
+        const now = Date.now();
+        // Remove old requests outside the window
+        this.requests = this.requests.filter(time => now - time < this.windowMs);
+        
+        if (this.requests.length >= this.maxRequests) {
             return false;
         }
         
-        firebase.initializeApp(FIREBASE_CONFIG);
-        database = firebase.database();
+        this.requests.push(now);
+        return true;
+    }
+}
+
+// Initialize R2 API
+async function initApi() {
+    try {
+        // Check if API config is available
+        if (!API_CONFIG) {
+            console.log("API not configured. Using localStorage fallback.");
+            return false;
+        }
         
-        // Listen for marker changes
-        database.ref('markers').on('value', (snapshot) => {
-            const data = snapshot.val();
-            syncMarkersFromFirebase(data);
-        });
+        apiClient = new R2ApiClient(API_CONFIG);
         
-        console.log('✅ Firebase initialized successfully');
+        // Test connection
+        const isHealthy = await apiClient.healthCheck();
+        if (!isHealthy) {
+            console.warn("API health check failed. Using localStorage fallback.");
+            return false;
+        }
+        
+        console.log('✅ R2 API initialized successfully');
+        
+        // Load initial markers
+        await loadMarkersFromApi();
+        
+        // Set up periodic sync (every 30 seconds)
+        syncInterval = setInterval(loadMarkersFromApi, 30000);
+        
         return true;
     } catch (error) {
-        console.error("Firebase initialization error:", error);
+        console.error("API initialization error:", error);
         console.log("Falling back to localStorage...");
         return false;
     }
 }
 
-// Sync markers from Firebase
-function syncMarkersFromFirebase(data) {
+// Load markers from R2 API
+async function loadMarkersFromApi() {
+    try {
+        if (!apiClient) return;
+        
+        const response = await apiClient.get(apiClient.endpoints.markers);
+        const markerData = response.markers || [];
+        
+        syncMarkersFromApi(markerData);
+        
+    } catch (error) {
+        console.error('Failed to load markers from API:', error);
+        // Fallback to localStorage if API fails
+        loadMarkersFromStorage();
+    }
+}
+
+// Sync markers from API data
+function syncMarkersFromApi(markerData) {
     // Clear existing markers
-    markers.forEach(m => m.element.remove());
+    markers.forEach(m => m.element && m.element.remove());
     markers = [];
     
     if (isGoogleMapView) {
@@ -98,34 +222,68 @@ function syncMarkersFromFirebase(data) {
         googleMarkers = [];
     }
     
-    // Add markers from Firebase
-    if (data) {
-        Object.values(data).forEach(markerData => {
-            // Determine marker type based on available coordinates
-            const hasLatLng = markerData.lat !== undefined && markerData.lng !== undefined;
-            const hasXY = markerData.x !== undefined && markerData.y !== undefined;
-            
-            if (isGoogleMapView && hasLatLng) {
-                addGoogleMarker(markerData.lat, markerData.lng, markerData.id, false);
-            } else if (isGoogleMapView && hasXY) {
-                // Convert grid coordinates to lat/lng for Google Maps
-                const lat = GOOGLE_MAPS_CONFIG.center.lat + ((markerData.y - COORD_CONVERSION.CENTER_OFFSET) / COORD_CONVERSION.LAT_SCALE);
-                const lng = GOOGLE_MAPS_CONFIG.center.lng + ((markerData.x - COORD_CONVERSION.CENTER_OFFSET) / COORD_CONVERSION.LNG_SCALE);
-                addGoogleMarker(lat, lng, markerData.id, false);
-            } else if (!isGoogleMapView && hasXY) {
-                addMarker(markerData.x, markerData.y, false, markerData.id);
-            } else if (!isGoogleMapView && hasLatLng) {
-                // Convert lat/lng to grid coordinates
-                const x = COORD_CONVERSION.CENTER_OFFSET + ((markerData.lng - GOOGLE_MAPS_CONFIG.center.lng) * COORD_CONVERSION.LNG_SCALE);
-                const y = COORD_CONVERSION.CENTER_OFFSET + ((markerData.lat - GOOGLE_MAPS_CONFIG.center.lat) * COORD_CONVERSION.LAT_SCALE);
-                addMarker(x, y, false, markerData.id);
-            }
-        });
+    // Add markers from API
+    markerData.forEach(marker => {
+        // Determine marker type based on available coordinates
+        const hasLatLng = marker.lat !== undefined && marker.lng !== undefined;
+        const hasXY = marker.x !== undefined && marker.y !== undefined;
+        
+        if (isGoogleMapView && hasLatLng) {
+            addGoogleMarker(marker.lat, marker.lng, marker.id, false);
+        } else if (isGoogleMapView && hasXY) {
+            // Convert grid coordinates to lat/lng for Google Maps
+            const lat = GOOGLE_MAPS_CONFIG.center.lat + ((marker.y - COORD_CONVERSION.CENTER_OFFSET) / COORD_CONVERSION.LAT_SCALE);
+            const lng = GOOGLE_MAPS_CONFIG.center.lng + ((marker.x - COORD_CONVERSION.CENTER_OFFSET) / COORD_CONVERSION.LNG_SCALE);
+            addGoogleMarker(lat, lng, marker.id, false);
+        } else if (!isGoogleMapView && hasXY) {
+            addMarker(marker.x, marker.y, false, marker.id);
+        } else if (!isGoogleMapView && hasLatLng) {
+            // Convert lat/lng to grid coordinates
+            const x = COORD_CONVERSION.CENTER_OFFSET + ((marker.lng - GOOGLE_MAPS_CONFIG.center.lng) * COORD_CONVERSION.LNG_SCALE);
+            const y = COORD_CONVERSION.CENTER_OFFSET + ((marker.lat - GOOGLE_MAPS_CONFIG.center.lat) * COORD_CONVERSION.LAT_SCALE);
+            addMarker(x, y, false, marker.id);
+        }
+    });
+}
+
+// Save marker to API
+async function saveMarkerToApi(marker) {
+    try {
+        if (!apiClient) {
+            saveMarkerToStorage(marker);
+            return;
+        }
+        
+        await apiClient.post(apiClient.endpoints.markers, marker);
+        console.log('✅ Marker saved to API');
+        
+    } catch (error) {
+        console.error('Failed to save marker to API:', error);
+        // Fallback to localStorage
+        saveMarkerToStorage(marker);
+    }
+}
+
+// Delete marker from API
+async function deleteMarkerFromApi(markerId) {
+    try {
+        if (!apiClient) {
+            deleteMarkerFromStorage(markerId);
+            return;
+        }
+        
+        await apiClient.delete(apiClient.endpoints.markers, markerId);
+        console.log('✅ Marker deleted from API');
+        
+    } catch (error) {
+        console.error('Failed to delete marker from API:', error);
+        // Fallback to localStorage
+        deleteMarkerFromStorage(markerId);
     }
 }
 
 // Initialize the map
-function initMap() {
+async function initMap() {
     console.log('🎃 Initializing Trick or Treat Map...');
     const mapElement = document.getElementById('map');
     
@@ -134,15 +292,15 @@ function initMap() {
         return;
     }
     
-    // Initialize Firebase
-    useFirebase = initFirebase();
-    console.log('🔥 Firebase enabled:', useFirebase);
+    // Initialize API
+    useApi = await initApi();
+    console.log('🌐 API enabled:', useApi);
     
     // Setup neighborhood image
     setupNeighborhoodImage();
     
     // Load saved markers
-    if (!useFirebase) {
+    if (!useApi) {
         console.log('💾 Loading markers from localStorage...');
         loadMarkers();
     }
@@ -378,7 +536,7 @@ function addMarker(xPercent, yPercent, save = true, id = null) {
     marker.addEventListener('click', (e) => {
         e.stopPropagation();
         if (confirm('Remove this marker?')) {
-            removeMarker(xPercent, yPercent, markerId);
+            removeMarker(xPercent, yPercent, markerId).catch(console.error);
         }
     });
     
@@ -388,7 +546,7 @@ function addMarker(xPercent, yPercent, save = true, id = null) {
     console.log('🎃 Added marker at', Math.round(xPercent) + '%,', Math.round(yPercent) + '%');
     
     if (save) {
-        saveMarkers(markerId, xPercent, yPercent);
+        saveMarkers(markerId, xPercent, yPercent).catch(console.error);
     }
 }
 
@@ -418,7 +576,7 @@ function addGoogleMarker(lat, lng, id = null, save = true) {
     googleMarkers.push({ lat, lng, marker, id: markerId });
     
     if (save) {
-        saveMarkers(markerId, null, null, lat, lng);
+        saveMarkers(markerId, null, null, lat, lng).catch(console.error);
     }
 }
 
@@ -448,30 +606,30 @@ function transferMarkersToGrid() {
 }
 
 // Remove a specific marker
-function removeMarker(xPercent, yPercent, markerId) {
+async function removeMarker(xPercent, yPercent, markerId) {
     const index = markers.findIndex(m => m.id === markerId);
     
     if (index !== -1) {
         markers[index].element.remove();
         markers.splice(index, 1);
         
-        if (useFirebase && database) {
-            database.ref('markers/' + markerId).remove();
+        if (useApi && apiClient) {
+            await deleteMarkerFromApi(markerId);
         } else {
             saveMarkersLocal();
         }
     }
 }
 
-function removeGoogleMarker(lat, lng, markerId, markerObj) {
+async function removeGoogleMarker(lat, lng, markerId, markerObj) {
     const index = googleMarkers.findIndex(m => m.id === markerId);
     
     if (index !== -1) {
         googleMarkers[index].marker.setMap(null);
         googleMarkers.splice(index, 1);
         
-        if (useFirebase && database) {
-            database.ref('markers/' + markerId).remove();
+        if (useApi && apiClient) {
+            await deleteMarkerFromApi(markerId);
         } else {
             saveMarkersLocal();
         }
@@ -495,12 +653,12 @@ function toggleAddMarkerMode(active) {
     }
 }
 
-// Save markers to Firebase or localStorage
-function saveMarkers(markerId, xPercent, yPercent, lat, lng) {
-    if (useFirebase && database) {
+// Save markers to API or localStorage
+async function saveMarkers(markerId, xPercent, yPercent, lat, lng) {
+    if (useApi && apiClient) {
         const markerData = {
             id: markerId,
-            timestamp: Date.now()
+            timestamp: new Date().toISOString()
         };
         
         if (lat !== undefined && lng !== undefined) {
@@ -511,7 +669,7 @@ function saveMarkers(markerId, xPercent, yPercent, lat, lng) {
             markerData.y = yPercent;
         }
         
-        database.ref('markers/' + markerId).set(markerData);
+        await saveMarkerToApi(markerData);
     } else {
         saveMarkersLocal();
     }
@@ -524,6 +682,41 @@ function saveMarkersLocal() {
         console.log('💾 Saved', markerData.length, 'markers to localStorage');
     } catch (error) {
         console.error('❌ Failed to save markers to localStorage:', error);
+    }
+}
+
+// localStorage helper functions for API fallback
+function saveMarkerToStorage(marker) {
+    try {
+        const stored = JSON.parse(localStorage.getItem('trickortreatMarkers') || '[]');
+        // Remove existing marker with same ID
+        const filtered = stored.filter(m => m.id !== marker.id);
+        filtered.push(marker);
+        localStorage.setItem('trickortreatMarkers', JSON.stringify(filtered));
+        console.log('💾 Saved marker to localStorage fallback');
+    } catch (error) {
+        console.error('❌ Failed to save marker to localStorage:', error);
+    }
+}
+
+function deleteMarkerFromStorage(markerId) {
+    try {
+        const stored = JSON.parse(localStorage.getItem('trickortreatMarkers') || '[]');
+        const filtered = stored.filter(m => m.id !== markerId);
+        localStorage.setItem('trickortreatMarkers', JSON.stringify(filtered));
+        console.log('💾 Deleted marker from localStorage fallback');
+    } catch (error) {
+        console.error('❌ Failed to delete marker from localStorage:', error);
+    }
+}
+
+function loadMarkersFromStorage() {
+    try {
+        const stored = JSON.parse(localStorage.getItem('trickortreatMarkers') || '[]');
+        syncMarkersFromApi(stored);
+        console.log('💾 Loaded markers from localStorage fallback');
+    } catch (error) {
+        console.error('❌ Failed to load markers from localStorage:', error);
     }
 }
 

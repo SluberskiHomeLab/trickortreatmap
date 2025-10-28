@@ -23,27 +23,35 @@ An interactive web application that allows residents of Cartwright Ranch to mark
 
 ## Configuration (Optional)
 
-### For Shared Markers (Firebase)
-If you want markers to be shared across all users in real-time:
+### For Shared Markers (Cloudflare R2 + Workers)
+If you want markers to be shared across all users in real-time with a secure, scalable backend:
 
-1. **Set up Firebase**:
-   - Go to [Firebase Console](https://console.firebase.google.com/)
-   - Create a new project
-   - Enable Realtime Database
-   - Copy your config from Project Settings
+1. **Deploy Cloudflare Backend**: Follow the detailed guide in `CLOUDFLARE_DEPLOYMENT.md`
 
-2. **Add to config.js**:
+2. **Quick Setup**:
+   - Install Wrangler CLI: `npm install -g wrangler`
+   - Deploy Worker: `wrangler deploy`
+   - Get your Worker URL
+
+3. **Add to config.js**:
    ```javascript
    window.CONFIG = {
-       firebase: {
-           apiKey: "your-api-key",
-           authDomain: "your-project.firebaseapp.com",
-           databaseURL: "https://your-project-rtdb.firebaseio.com",
-           projectId: "your-project-id",
-           // ... other config values
+       api: {
+           baseUrl: "https://trickortreat-api.<your-subdomain>.workers.dev",
+           endpoints: {
+               markers: "/api/markers",
+               health: "/api/health"
+           }
        }
    };
    ```
+
+**Benefits of Cloudflare R2:**
+- ✅ Free tier: 10GB storage, 1M operations/month
+- ✅ Global CDN and edge computing
+- ✅ Built-in security and rate limiting  
+- ✅ No vendor lock-in
+- ✅ Better performance than Firebase
 
 ### For Google Maps Integration (Optional)
 To enable satellite view toggle:
