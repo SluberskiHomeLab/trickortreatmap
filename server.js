@@ -409,7 +409,7 @@ app.listen(PORT, () => {
     console.log('🎃 Trick or Treat Map Server Started! (v2.0.0 - better-sqlite3)');
     console.log(`🌐 Server running on http://localhost:${PORT}`);
     console.log(`📊 API available at http://localhost:${PORT}/api/`);
-    console.log(`🗄️ Database: ${dbPath}`);
+    console.log(`🗄️ Database: ${DB_PATH}`);
     console.log('\n📍 API Endpoints:');
     console.log('  GET  /api/health   - Health check');
     console.log('  GET  /api/markers  - Get all markers');
