@@ -9,10 +9,12 @@
   },
   "scripts": {
     "start": "node server.js",
+    "start:prod": "NODE_ENV=production node server.js",
     "dev": "nodemon server.js",
     "init-db": "node init-db.js",
     "test": "node test-api.js",
     "upgrade": "node upgrade.js",
+    "setup:env": "cp .env.example .env",
     "clean": "node -e \"const fs=require('fs');try{fs.rmSync('node_modules',{recursive:true});fs.unlinkSync('package-lock.json');}catch(e){}console.log('✅ Cleaned')\"",
     "fresh-install": "npm run clean && npm install"
   },
@@ -21,7 +23,8 @@
     "better-sqlite3": "^11.3.0",
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
-    "express-rate-limit": "^7.4.0"
+    "express-rate-limit": "^7.4.0",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"

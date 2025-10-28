@@ -1,10 +1,13 @@
-// Local development configuration
-// This points to the local Node.js/Express server with SQLite database
+// Configuration supporting both local development and reverse proxy deployment
+// Auto-detects environment and uses appropriate API endpoints
 
 window.CONFIG = {
-    // Local Express server API endpoint
+    // API endpoint configuration - works with reverse proxy or direct access
     api: {
-        baseUrl: "http://localhost:3001",  // Local server URL
+        // Use relative path for reverse proxy, fallback to localhost for development
+        baseUrl: window.location.protocol === 'file:' 
+            ? "http://localhost:3001"  // Local file access (development)
+            : "",  // Use current origin (reverse proxy or direct server access)
         endpoints: {
             markers: "/api/markers",
             health: "/api/health",
@@ -16,11 +19,11 @@ window.CONFIG = {
     // Optional Google Maps integration
     googleMapsApiKey: "",        // Add your Google Maps API key here if desired
     
-    // Local server settings
+    // Server settings (for development and deployment info)
     server: {
-        host: "localhost",
-        port: 3001,
-        autoStart: true          // Whether to suggest starting the server
+        host: window.location.hostname || "localhost",
+        port: window.location.port || 3001,
+        autoStart: window.location.protocol === 'file:'  // Only suggest starting for local files
     },
     
     // Storage settings
@@ -31,4 +34,8 @@ window.CONFIG = {
     }
 };
 
-console.log('📋 Configuration loaded - Local SQLite backend ready');
+// Log configuration details
+const deploymentMode = window.location.protocol === 'file:' ? 'Local Development' : 'Server/Proxy Deployment';
+console.log(`📋 Configuration loaded - ${deploymentMode} mode`);
+console.log(`🌐 API Base URL: ${window.CONFIG.api.baseUrl || 'Same Origin'}`);
+console.log(`🗄️ SQLite backend ready`);

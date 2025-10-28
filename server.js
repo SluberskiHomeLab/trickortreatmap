@@ -1,4 +1,7 @@
 // Local Express server using better-sqlite3 (no deprecated dependencies)
+// Load environment variables
+require('dotenv').config();
+
 const express = require('express');
 const Database = require('better-sqlite3');
 const cors = require('cors');
@@ -7,13 +10,35 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const app = express();
+
+// Environment configuration
 const PORT = process.env.PORT || 3001;
-const dbPath = path.join(__dirname, 'trickortreat.db');
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'trickortreat.db');
+const TRUST_PROXY = process.env.TRUST_PROXY === 'true' || NODE_ENV === 'production';
+const RATE_LIMIT_WINDOW = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000;
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 20;
+
+console.log(`🚀 Starting Trick-or-Treat Map Server`);
+console.log(`📊 Environment: ${NODE_ENV}`);
+console.log(`🔌 Port: ${PORT}`);
+console.log(`🗄️ Database: ${DB_PATH}`);
+console.log(`🔒 Proxy Trust: ${TRUST_PROXY}`);
+
+// Configure reverse proxy support
+app.set('trust proxy', TRUST_PROXY);
 
 // Database connection (synchronous with better-sqlite3)
 let db;
 try {
-    db = new Database(dbPath);
+    // Ensure database directory exists
+    const dbDir = path.dirname(DB_PATH);
+    const fs = require('fs');
+    if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+    }
+    
+    db = new Database(DB_PATH);
     console.log('✅ Connected to SQLite database');
     
     // Enable WAL mode for better performance
@@ -26,12 +51,47 @@ try {
 // Middleware
 app.use(helmet({
     contentSecurityPolicy: false, // Allow inline scripts for development
+    crossOriginEmbedderPolicy: false // Allow iframe embedding for reverse proxy
 }));
 
-app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8080', 'file://'],
-    credentials: true
-}));
+// CORS configuration for reverse proxy deployment
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        
+        // Check environment variable for allowed origins
+        const allowedOrigins = process.env.CORS_ORIGIN;
+        if (allowedOrigins && allowedOrigins !== '*') {
+            const origins = allowedOrigins.split(',').map(o => o.trim());
+            if (origins.includes(origin)) return callback(null, true);
+        } else if (allowedOrigins === '*') {
+            return callback(null, true);
+        }
+        
+        // Allow localhost for development
+        if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+            return callback(null, true);
+        }
+        
+        // Allow file:// protocol for local HTML files
+        if (origin.startsWith('file://')) {
+            return callback(null, true);
+        }
+        
+        // In production, allow the origin (reverse proxy will handle domain validation)
+        if (NODE_ENV === 'production') {
+            return callback(null, true);
+        }
+        
+        callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Forwarded-For', 'X-Real-IP']
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('.', { 
@@ -44,11 +104,13 @@ app.use(express.static('.', {
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute
-    max: 20, // limit each IP to 20 requests per windowMs
+    windowMs: RATE_LIMIT_WINDOW,
+    max: RATE_LIMIT_MAX,
     message: {
         error: 'Too many requests from this IP, please try again later.'
-    }
+    },
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
 app.use('/api/', limiter);
@@ -59,8 +121,22 @@ app.use('/api/', (req, res, next) => {
     next();
 });
 
-// Helper function to get client IP
+// Helper function to get client IP (reverse proxy aware)
 function getClientIp(req) {
+    // Check for X-Forwarded-For header (reverse proxy)
+    const xForwardedFor = req.headers['x-forwarded-for'];
+    if (xForwardedFor) {
+        // X-Forwarded-For can contain multiple IPs, take the first (original client)
+        return xForwardedFor.split(',')[0].trim();
+    }
+    
+    // Check for X-Real-IP header (nginx)
+    const xRealIp = req.headers['x-real-ip'];
+    if (xRealIp) {
+        return xRealIp;
+    }
+    
+    // Fallback to Express's req.ip (works with trust proxy)
     return req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
 }
 
