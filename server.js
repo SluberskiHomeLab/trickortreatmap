@@ -28,7 +28,7 @@ console.log(`🔒 Proxy Trust: ${TRUST_PROXY}`);
 // Configure reverse proxy support
 app.set('trust proxy', TRUST_PROXY);
 
-// Database connection (synchronous with better-sqlite3)
+// Database connection and initialization (synchronous with better-sqlite3)
 let db;
 try {
     // Ensure database directory exists
@@ -43,9 +43,56 @@ try {
     
     // Enable WAL mode for better performance
     db.pragma('journal_mode = WAL');
+    
+    // Initialize database schema (create tables if they don't exist)
+    initializeDatabase(db);
+    
 } catch (error) {
     console.error('❌ Error connecting to database:', error.message);
     process.exit(1);
+}
+
+// Database initialization function
+function initializeDatabase(database) {
+    try {
+        console.log('🔧 Initializing database schema...');
+        
+        // Create markers table
+        database.exec(`
+            CREATE TABLE IF NOT EXISTS markers (
+                id TEXT PRIMARY KEY,
+                x REAL NOT NULL,
+                y REAL NOT NULL,
+                lat REAL,
+                lng REAL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                client_ip TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        // Create index for better performance
+        database.exec(`
+            CREATE INDEX IF NOT EXISTS idx_markers_timestamp 
+            ON markers(timestamp DESC)
+        `);
+        
+        // Create settings table for app configuration
+        database.exec(`
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        
+        console.log('✅ Database schema initialized successfully');
+        
+    } catch (error) {
+        console.error('❌ Error initializing database:', error.message);
+        throw error;
+    }
 }
 
 // Middleware

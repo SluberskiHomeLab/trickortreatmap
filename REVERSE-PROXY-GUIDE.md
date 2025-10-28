@@ -19,12 +19,7 @@ npm run setup:env
 notepad .env
 ```
 
-### 3. Initialize Database
-```powershell
-npm run init-db
-```
-
-### 4. Start in Production Mode
+### 3. Start in Production Mode
 ```powershell
 npm run start:prod
 ```
