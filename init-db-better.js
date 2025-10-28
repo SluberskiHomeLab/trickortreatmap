@@ -72,6 +72,7 @@ try {
     console.log('✅ Default settings inserted');
 
     // Get database info
+    const info = db.pragma('database_list');
     console.log('✅ Database file size:', require('fs').statSync(dbPath).size, 'bytes');
 
     db.close();

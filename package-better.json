@@ -1,7 +1,7 @@
 {
   "name": "trickortreat-local-backend",
-  "version": "2.0.0",
-  "description": "Local SQLite backend for Trick or Treat Map (No deprecated dependencies)",
+  "version": "1.0.0",
+  "description": "Local SQLite backend for Trick or Treat Map",
   "main": "server.js",
   "engines": {
     "node": ">=18.0.0",
@@ -12,8 +12,7 @@
     "dev": "nodemon server.js",
     "init-db": "node init-db.js",
     "test": "node test-api.js",
-    "upgrade": "node upgrade.js",
-    "clean": "node -e \"const fs=require('fs');try{fs.rmSync('node_modules',{recursive:true});fs.unlinkSync('package-lock.json');}catch(e){}console.log('✅ Cleaned')\"",
+    "clean": "rimraf node_modules package-lock.json",
     "fresh-install": "npm run clean && npm install"
   },
   "dependencies": {
@@ -26,7 +25,7 @@
   "devDependencies": {
     "nodemon": "^3.1.4"
   },
-  "keywords": ["halloween", "trick-or-treat", "map", "sqlite", "local", "no-deprecated"],
+  "keywords": ["halloween", "trick-or-treat", "map", "sqlite", "local"],
   "author": "Your Name",
   "license": "MIT"
 }
