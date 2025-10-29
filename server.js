@@ -141,10 +141,37 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
+
+// Debugging middleware for reverse proxy
+if (NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+        console.log('  Origin:', req.get('Origin') || 'none');
+        console.log('  X-Forwarded-For:', req.get('X-Forwarded-For') || 'none');
+        console.log('  X-Real-IP:', req.get('X-Real-IP') || 'none');
+        console.log('  User-Agent:', req.get('User-Agent') || 'none');
+        next();
+    });
+}
+
+// Static file serving with proper headers for reverse proxy
 app.use(express.static('.', { 
-    setHeaders: (res, path) => {
-        if (path.endsWith('.html')) {
-            res.setHeader('Cache-Control', 'no-cache');
+    setHeaders: (res, filePath) => {
+        // No cache for HTML files
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+        }
+        // Cache static assets
+        else if (filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/)) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
+        }
+        // CORS headers for all files when needed
+        if (NODE_ENV === 'production') {
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
         }
     }
 }));
@@ -389,9 +416,31 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// 404 handler
+// 404 handler with debugging info
 app.use((req, res) => {
-    res.status(404).json({ error: 'Not found' });
+    console.log(`❌ 404 - Not Found: ${req.method} ${req.url}`);
+    console.log('  Headers:', JSON.stringify(req.headers, null, 2));
+    
+    const debugInfo = NODE_ENV === 'development' ? {
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        availableEndpoints: [
+            'GET /api/health',
+            'GET /api/markers',
+            'POST /api/markers',
+            'DELETE /api/markers?id=<id>',
+            'GET /api/settings',
+            'GET /api/stats',
+            'GET /'
+        ]
+    } : undefined;
+    
+    res.status(404).json({ 
+        error: 'Not found',
+        path: req.url,
+        debug: debugInfo
+    });
 });
 
 // Graceful shutdown

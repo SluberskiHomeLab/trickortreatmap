@@ -4,10 +4,25 @@
 window.CONFIG = {
     // API endpoint configuration - works with reverse proxy or direct access
     api: {
-        // Use relative path for reverse proxy, fallback to localhost for development
-        baseUrl: window.location.protocol === 'file:' 
-            ? "http://localhost:3001"  // Local file access (development)
-            : "",  // Use current origin (reverse proxy or direct server access)
+        // Smart base URL detection for different deployment scenarios
+        baseUrl: (function() {
+            // Local file access (development)
+            if (window.location.protocol === 'file:') {
+                return "http://localhost:3001";
+            }
+            
+            // Check if we're on a non-standard port that's not the API port
+            const currentPort = window.location.port;
+            const isStandardPort = !currentPort || currentPort === '80' || currentPort === '443';
+            
+            // If we're on standard web ports (80/443) or a reverse proxy, use relative URLs
+            // If we're on port 3001, we're directly accessing the Node.js server
+            if (isStandardPort || currentPort !== '3001') {
+                return ""; // Use current origin (reverse proxy)
+            } else {
+                return ""; // Direct server access, still use relative paths
+            }
+        })(),
         endpoints: {
             markers: "/api/markers",
             health: "/api/health",
