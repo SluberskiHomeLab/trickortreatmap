@@ -1,4 +1,4 @@
-# 🎃 Cartwright Ranch Trick or Treat Map 🍬
+# 🎃 Cartwright Ranch Trick or Treat Map 🍬 HAS NOW BEEN MOVED FOR FORGEJO: https://git.sluberskihomelab.com/Public/trickortreatmap
 
 An interactive web application that allows residents of Cartwright Ranch to mark their houses on a map if they're handing out candy on Halloween.
 
